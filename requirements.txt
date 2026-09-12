@@ -5,3 +5,5 @@ python-dotenv
 PyMuPDF
 python-multipart
 pytest
+sentence-transformers
+scikit-learn
