@@ -11,6 +11,7 @@ from app.services.semantic_skill_matcher import semantic_skill_match
 from app.llm.question_generator import generate_interview_questions
 from app.services.session_manager import create_session, get_session
 from app.services.interview_engine import submit_answer
+from app.services.interview_report import generate_interview_report
 
 
 app = FastAPI(title="AI Technical Interview Coach")
@@ -145,4 +146,26 @@ def submit_interview_answer(request: AnswerSubmissionRequest):
         "evaluation": result["evaluation"],
         "progress": result["progress"],
         "next_question": session.get_current_question()
+    }
+@app.get("/interview-report")
+def get_interview_report(session_id: str):
+    """
+    Generate the final interview performance report.
+    """
+
+    session = get_session(session_id)
+
+    if session is None:
+        return {
+            "error": "Interview session not found."
+        }
+
+    report = generate_interview_report(
+        session.evaluations
+    )
+
+    return {
+        "session_id": session_id,
+        "progress": session.get_progress(),
+        "report": report
     }
