@@ -6,7 +6,7 @@ from app.services.resume_parser import extract_text_from_pdf
 from app.services.skill_extractor import extract_skills
 from app.services.job_analyzer import analyze_job_description
 from app.services.skill_matcher import match_skills
-
+from app.services.semantic_skill_matcher import semantic_skill_match
 
 app = FastAPI(title="AI Technical Interview Coach")
 
@@ -60,6 +60,12 @@ async def analyze_resume(
             job_skills
         )
 
+        # Step 5: Semantic skill matching
+        semantic_result = semantic_skill_match(
+            resume_skills,
+            job_skills
+        )
+
         return {
             "resume_filename": resume.filename,
             "resume_skills": resume_skills,
@@ -67,7 +73,9 @@ async def analyze_resume(
             "matched_skills": match_result["matched_skills"],
             "missing_skills": match_result["missing_skills"],
             "extra_skills": match_result["extra_skills"],
-            "match_percentage": match_result["match_percentage"]
+            "match_percentage": match_result["match_percentage"],
+            "semantic_matched_skills": semantic_result["matched_skills"],
+            "semantic_missing_skills": semantic_result["missing_skills"]
         }
 
     finally:
