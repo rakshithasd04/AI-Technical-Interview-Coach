@@ -7,6 +7,7 @@ from app.services.skill_extractor import extract_skills
 from app.services.job_analyzer import analyze_job_description
 from app.services.skill_matcher import match_skills
 from app.services.semantic_skill_matcher import semantic_skill_match
+from app.llm.question_generator import generate_interview_questions
 
 app = FastAPI(title="AI Technical Interview Coach")
 
@@ -65,6 +66,11 @@ async def analyze_resume(
             resume_skills,
             job_skills
         )
+        # Step 6: Generate personalized interview questions
+        interview_questions = generate_interview_questions(
+            resume_text,
+            job_description
+        )
 
         return {
             "resume_filename": resume.filename,
@@ -75,7 +81,8 @@ async def analyze_resume(
             "extra_skills": match_result["extra_skills"],
             "match_percentage": match_result["match_percentage"],
             "semantic_matched_skills": semantic_result["matched_skills"],
-            "semantic_missing_skills": semantic_result["missing_skills"]
+            "semantic_missing_skills": semantic_result["missing_skills"],
+            "interview_questions": interview_questions
         }
 
     finally:
