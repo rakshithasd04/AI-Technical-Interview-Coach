@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
+from pydantic import BaseModel
 import tempfile
 import os
 
@@ -8,8 +9,14 @@ from app.services.job_analyzer import analyze_job_description
 from app.services.skill_matcher import match_skills
 from app.services.semantic_skill_matcher import semantic_skill_match
 from app.llm.question_generator import generate_interview_questions
+from app.services.session_manager import create_session
+
 
 app = FastAPI(title="AI Technical Interview Coach")
+
+
+class InterviewStartRequest(BaseModel):
+    questions: list[str]
 
 
 @app.get("/")
@@ -55,7 +62,7 @@ async def analyze_resume(
 
         job_skills = job_analysis["required_skills"]
 
-        # Step 4: Compare resume and job skills
+        # Step 4: Exact skill matching
         match_result = match_skills(
             resume_skills,
             job_skills
@@ -66,6 +73,7 @@ async def analyze_resume(
             resume_skills,
             job_skills
         )
+
         # Step 6: Generate personalized interview questions
         interview_questions = generate_interview_questions(
             resume_text,
@@ -87,3 +95,23 @@ async def analyze_resume(
 
     finally:
         os.remove(temp_file_path)
+
+
+@app.post("/start-interview")
+def start_interview(request: InterviewStartRequest):
+    """
+    Start a new interview session.
+    """
+
+    if not request.questions:
+        return {
+            "error": "At least one question is required."
+        }
+
+    session_id = create_session(request.questions)
+
+    return {
+        "session_id": session_id,
+        "first_question": request.questions[0],
+        "total_questions": len(request.questions)
+    }
