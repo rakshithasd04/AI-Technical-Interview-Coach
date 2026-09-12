@@ -9,12 +9,15 @@ from app.services.job_analyzer import analyze_job_description
 from app.services.skill_matcher import match_skills
 from app.services.semantic_skill_matcher import semantic_skill_match
 from app.llm.question_generator import generate_interview_questions
-from app.services.session_manager import create_session
+from app.services.session_manager import create_session, get_session
+from app.services.interview_engine import submit_answer
 
 
 app = FastAPI(title="AI Technical Interview Coach")
 
-
+class AnswerSubmissionRequest(BaseModel):
+    session_id: str
+    answer: str
 class InterviewStartRequest(BaseModel):
     questions: list[str]
 
@@ -114,4 +117,32 @@ def start_interview(request: InterviewStartRequest):
         "session_id": session_id,
         "first_question": request.questions[0],
         "total_questions": len(request.questions)
+    }
+@app.post("/submit-answer")
+def submit_interview_answer(request: AnswerSubmissionRequest):
+    """
+    Submit an answer for the current interview question.
+    """
+
+    session = get_session(request.session_id)
+
+    if session is None:
+        return {
+            "error": "Interview session not found."
+        }
+
+    if session.is_complete():
+        return {
+            "error": "Interview is already complete."
+        }
+
+    result = submit_answer(
+        session,
+        request.answer
+    )
+
+    return {
+        "evaluation": result["evaluation"],
+        "progress": result["progress"],
+        "next_question": session.get_current_question()
     }
